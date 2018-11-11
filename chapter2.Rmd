@@ -1,7 +1,68 @@
-# Insert chapter 2 title here
+# Linear regression
 
 *Describe the work you have done this week and summarize your learning.*
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using  
+- The students2014-dataset and linear regression modelling were used to examine the relationship between student demographic factors and attitude with examination points. At first, a 3-variable model was built, but eventually only the attitude-variable remained statistically significant and was included in the final model. The model suggested that an increase in attitude would result in an increase in exam points, and that a student's attitude explained 19% of the points-variable's variance.
+
+```
+
+#1: reading data into R (from url, as I had some difficulties with the data wrangling assignment; I'll get back to the data wrangling assignment later if time permits!)
+
+students2014 <- read.table("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/learning2014.txt", sep = ",", header = TRUE)
+
+str(students2014)
+dim(students2014)
+
+#the dataset includes 166 observations across 7 variables (gender, age, attitude, deep, stra, surf, points)
+
+#2: graphical overview and summaries
+
+install.packages("ggplot2")
+library(ggplot2)
+
+summary(students2014$gender)
+summary(students2014$age)
+summary(students2014$attitude)
+summary(students2014$deep)
+summary(students2014$stra)
+summary(students2014$surf)
+summary(students2014$points)
+
+#110 females and 56 males; median age 22 (IQR 21-27); median points 23 (IQR 19-27.75)
+
+p1 <- ggplot(students2014, aes(x=attitude, y=points, col=gender))
+p2 <- p1 + geom_point()
+p3 <- p2 + geom_smooth(method="lm")
+p4 <- p3 + ggtitle("Students' attitude vs exam points")
+p4
+
+install.packages("GGally")
+library(GGally)
+
+p <- ggpairs(students2014, mapping = aes(col=gender, alpha=0.3), lower = list(combo = wrap("facethist"), bins=20))
+p
+
+#the visualisations demonstrate that an increase in attitude results in an increase in points
+
+#3: regression model
+
+model <- lm(formula = points ~ gender + age + attitude, data=students2014)
+summary(model)
+
+#the three explanatory variables included in the model are gender, age and attitude. the summary suggests that neither age nor attitude have a statistically significant relationship with the dependent variable (points), hence they will be excluded from the subsequent model. However, the variable attitude is statistically significant, in that an increase of 3.6 points in attitude results in an increase of 1 in exam points.
+
+#4 we will now create a new model without the statistically insignificant variables gender and age
+
+model2 <- lm(formula = points ~ attitude, data=students2014)
+summary(model2)
+
+#the summary demonstrates that the variable attitude remains statistically significant in this univariate model as well, and that an increase of 3.5 in attitude results in an increase of 1 in points. The R-squared of 0.1906 is interpreted so that the model variables (attitude) explains 19% of the dependent variable's (points) variance.
+
+#5: diagnostic plots
+
+par(mfrow=c(2,2))
+plot(model2, which=c(1,2,5))
+
+#residuals vs fitted: 1) the residuals "bounce randomly" around the 0 line, suggesting that the assumption that the relationship is linear is reasonable; 2) the residuals roughly form a "horizontal band" around the 0 line, suggesting that the variances of the error terms are equal; 3) no one residuals stands out from the pattern, suggesting that there are no outliers
+#qq-plot: the residuals seem quite normally distributed
+#residuals vs leverage: the plot suggests there are no individual influential outlier cases
