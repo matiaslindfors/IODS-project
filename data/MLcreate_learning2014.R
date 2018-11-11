@@ -1,29 +1,52 @@
-# Matias Lindfors, 9.11.2018, tässä vkon 2 tehtävä:
+# Matias Lindfors, 9.11.2018, here's the assignment for week 2:
 
 lrn14 <- read.table("http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt", sep = "\t", header=TRUE)
 
 str(lrn14)
 dim(lrn14)
 
-#data sisältää 183 havaintoa 60 muuttujasta
+#the data includes 183 observations across 60 variables
 
-#age- ja sex-muuttujia ei tarvitse muokata.
+#variabels age and sex don't need to be altered
 
 lrn14$Attitude
 
-#Attitude on combination-muuttuja, skaalataan se alkuperäiselle asteikolle:
+#Attitude is a combination variable, let's scale it back to the original  scale:
 
 lrn14$attitude <- lrn14$Attitude/10
 lrn14$attitude
 
-#seuraavaksi muodostetaan muuttujat deep, surface ja strategic. poimitaan lrn14-datasta deep-, surface- ja strategic-kysymykset kuten datacamp-harjoituksessa:
+#let's create the variables deep, surface and strategic. let's select the relevant questions from the  lrn14-data, as i nthe  datacamp-exercise
 
 deep_questions <- c("D03", "D11", "D19", "D27", "D07", "D14", "D22", "D30","D06",  "D15", "D23", "D31")
 surface_questions <- c("SU02","SU10","SU18","SU26", "SU05","SU13","SU21","SU29","SU08","SU16","SU24","SU32")
 strategic_questions <- c("ST01","ST09","ST17","ST25","ST04","ST12","ST20","ST28")
 
+install.packages("dplyr")
 library(dplyr)
 
-#dplyr-paketin lataaminen ei onnistu useista yrityksistä huolimatta. päädytään käyttämään 2. osassa valmista dataa.
+deep_columns <- select(lrn14, one_of(deep_questions))
+lrn14$deep <- rowMeans(deep_columns)
+surface_columns <- select(lrn14, one_of(surface_questions))
+lrn14$surface <- rowMeans(surface_columns)
+strategic_columns <- select(lrn14, one_of(strategic_questions))
+lrn14$strategic <- rowMeans(strategic_columns)
 
-#-ML
+keep_columns <- c("gender", "Age", "attitude", "deep", "strategic", "surface", "Points")
+learning2014 <- select(lrn14, one_of(keep_columns))
+str(learning2014)
+
+#changing column names:
+
+colnames(learning2014)
+colnames(learning2014)[2] <- "age"
+colnames(learning2014)[7] <- "points"
+colnames(learning2014)
+
+#excluding those with 0 points:
+
+learning2014 <- filter(learning2014, points>0)
+str(learning2014)
+
+write.table(learning2014, file="learning2014")
+
