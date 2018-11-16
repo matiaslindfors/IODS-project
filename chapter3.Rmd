@@ -1,0 +1,72 @@
+---
+title: "chapter3"
+author: "Matias Lindfors"
+date: "16 marraskuuta 2018"
+output: html_document
+---
+
+```{}
+
+#reading data into R:
+
+data <- read.table("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/alc.txt", sep=",", header=TRUE)
+
+dim(data)
+colnames(data)
+
+#The data includes information on student achievement in secondary education in two Portuguese schools. The variables of the data depict student grades as well as demographic, social and school characteristics, including variables such as "school", "sex", "age", "studytime", "health", et cetera. Below a summary of the data:
+
+summary(data)
+
+#Let's study the relationship between high/low alcohol consumption and variables (1) age, (2) sex, (3) guardian and (4) health. I hypothesized that increasing age, male sex, having a father as a primary guardian and poor health would be associated with high alcohol consumption.
+
+summary(data$age)
+summary(data$sex)
+summary(data$guardian)
+summary(data$health)
+hist(data$age)
+hist(data$health)
+
+install.packages("gmodels")
+library(gmodels)
+
+#The tables are not very aesthetic, sorry for that!
+
+CrossTable(data$age, data$high_use)
+#As you can see, 22-26% of 15-16 year-olds had high alcohol use, whereas 32-35% of 17-18 year-olds had high alcohol use, supporting my hypothesis. Students aged 19-22 were few in number, and thus not interpreteted.
+
+CrossTable(data$sex, data$high_use)
+#As you can see, 21% of women but 39% of men had high alcohol use, supporting my hypothesis.
+
+CrossTable(data$guardian, data$high_use)
+#As you can see, 28% of students guarded by their mother and 32% of students taken care of by their father had high alcohol use, supporting my hypothesis. Moreover, 44% of those who had someone else than their mother or father as their guardian had high alcohol consumption!
+
+CrossTable(data$health, data$high_use)
+#As you can see, the proportion of high alcohol use varies between 20-35% across all categories of health, without clear association, contradicting my preliminary hypothesis!
+
+model <- glm(high_use ~ age + sex + guardian + health, data = data)
+summary(model)
+#Age and sex are the only statistically relevant variables in the model
+
+OR <- coef(model) %>% exp
+CI <- confint(model) %>% exp
+cbind(OR, CI)
+#Male sex increases the propability of high alcohol use (OR, 1.19; 95%CI, 1.09-1.30), as does age, althogh to a lesser extent (OR 1.04; 95%CI, 1.00-1.08). The 95%CIs of other variables overlap 1, and are thus insignificant.
+
+probabilities <- predict(model, type = "response")
+data <- mutate(data, probability = probabilities)
+data <- mutate(data, prediction = probability > 0.5)
+select(data, age, sex, high_use, probability, prediction) %>% tail(10)
+table(high_use = data$high_use, prediction = data$prediction)
+
+#Here is the 2x2 tabulation:
+
+        prediction
+high_use FALSE TRUE
+   FALSE   268    2
+   TRUE    108    4
+   
+#As you can see, the sensitivity of our model is 3.57% i.e. VERY POOR, and the specifity of our model is 99.26%. This means our model has extremely poor performance in predicting high alcohol use, comparing to, say, a guess, but that the sensitivity of the model is very good. 
+
+#THE END.
+```

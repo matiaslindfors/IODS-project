@@ -1,6 +1,6 @@
 ---
 title: "IODS course project"
-output:
+output: "Matias Lindfors"
   html_document:
     theme: cosmo
     toc: true
@@ -19,6 +19,11 @@ output:
 ***
   
 ```{r child = "chapter2.Rmd"}
+```
+
+***
+
+```{r child = "chapter3.Rmd"}
 ```
 
 ***

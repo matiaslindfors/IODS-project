@@ -1,0 +1,3 @@
+# output: github_document
+
+*An interesting course! Sadly even these first assignments feel somewhat challenging! [Here's](https://matiaslindfors.github.io/IODS-project/) a link to my course diary.*
