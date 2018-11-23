@@ -224,6 +224,257 @@ $(document).ready(function () {
 <div id="residuals-vs-leverage-the-plot-suggests-there-are-no-individual-influential-outlier-cases" class="section level1">
 <h1>residuals vs leverage: the plot suggests there are no individual influential outlier cases</h1>
 <hr />
+<pre><code>
+#reading data into R:
+
+data &lt;- read.table(&quot;http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/alc.txt&quot;, sep=&quot;,&quot;, header=TRUE)
+
+dim(data)
+colnames(data)
+
+#The data includes information on student achievement in secondary education in two Portuguese schools. The variables of the data depict student grades as well as demographic, social and school characteristics, including variables such as &quot;school&quot;, &quot;sex&quot;, &quot;age&quot;, &quot;studytime&quot;, &quot;health&quot;, et cetera. Below a summary of the data:
+
+summary(data)
+
+#Let's study the relationship between high/low alcohol consumption and variables (1) age, (2) sex, (3) guardian and (4) health. I hypothesized that increasing age, male sex, having a father as a primary guardian and poor health would be associated with high alcohol consumption.
+
+summary(data$age)
+summary(data$sex)
+summary(data$guardian)
+summary(data$health)
+hist(data$age)
+hist(data$health)
+
+install.packages(&quot;gmodels&quot;)
+library(gmodels)
+
+#The tables are not very aesthetic, sorry for that!
+
+CrossTable(data$age, data$high_use)
+#As you can see, 22-26% of 15-16 year-olds had high alcohol use, whereas 32-35% of 17-18 year-olds had high alcohol use, supporting my hypothesis. Students aged 19-22 were few in number, and thus not interpreteted.
+
+CrossTable(data$sex, data$high_use)
+#As you can see, 21% of women but 39% of men had high alcohol use, supporting my hypothesis.
+
+CrossTable(data$guardian, data$high_use)
+#As you can see, 28% of students guarded by their mother and 32% of students taken care of by their father had high alcohol use, supporting my hypothesis. Moreover, 44% of those who had someone else than their mother or father as their guardian had high alcohol consumption!
+
+CrossTable(data$health, data$high_use)
+#As you can see, the proportion of high alcohol use varies between 20-35% across all categories of health, without clear association, contradicting my preliminary hypothesis!
+
+model &lt;- glm(high_use ~ age + sex + guardian + health, data = data)
+summary(model)
+#Age and sex are the only statistically relevant variables in the model
+
+OR &lt;- coef(model) %&gt;% exp
+CI &lt;- confint(model) %&gt;% exp
+cbind(OR, CI)
+#Male sex increases the propability of high alcohol use (OR, 1.19; 95%CI, 1.09-1.30), as does age, althogh to a lesser extent (OR 1.04; 95%CI, 1.00-1.08). The 95%CIs of other variables overlap 1, and are thus insignificant.
+
+probabilities &lt;- predict(model, type = &quot;response&quot;)
+data &lt;- mutate(data, probability = probabilities)
+data &lt;- mutate(data, prediction = probability &gt; 0.5)
+select(data, age, sex, high_use, probability, prediction) %&gt;% tail(10)
+table(high_use = data$high_use, prediction = data$prediction)
+
+#Here is the 2x2 tabulation:
+
+        prediction
+high_use FALSE TRUE
+   FALSE   268    2
+   TRUE    108    4
+   
+#As you can see, the sensitivity of our model is 3.57% i.e. VERY POOR, and the specifity of our model is 99.26%. This means our model has extremely poor performance in predicting high alcohol use, comparing to, say, a guess, but that the sensitivity of the model is very good. 
+
+#THE END.</code></pre>
+<hr />
+<pre><code>
+# 1) Here's the assignment for week 4
+
+# 2) Let's first download the Boston data:
+
+install.packages(&quot;MASS&quot;)
+library(MASS)
+data(Boston)
+str(Boston)
+dim(Boston)
+
+#The dataset includes 506 observations across 14 variables. The data contains housing data from the Boston area, including variables such as crime rate (crim), distance to employment centers (dis), and pupil-teacher ratio (ptratio).
+
+# 3) Let's have a look at a summary of the included variables:
+
+summary(Boston)
+
+#The summary suggests that crime rates range from 0.00632 to 88.97620 per capita (IQR 0.08-3.67), and that the pupil-teacher ratio ranges from 12.6 to 22 (IQR 17.4-20.2), for instance.
+
+#Let's visualise relationships (correlations) between variables in the data:
+
+install.packages(&quot;corrplot&quot;)
+library(corrplot)
+cor_matrix &lt;- cor(Boston)
+corrplot(cor_matrix, method=&quot;circle&quot;, type=&quot;upper&quot;)
+
+#The plot displays positive correlations in blue and negative correlations in red. Color intensity and the size of the circle are proportional to the correlation coefficients.
+#Strongest positive correlations are found between accessibility to highways (rad) and property tax-rate (tax), and between air nitroxen oxide (nox) and industrial acres in town (indus).
+#Strongest negative correlations are found between property value (medv) and proportion of low socioeconomic population (lstat), and between distance to employment center (dis) and air nitroxen oxide (nox).
+
+# 4) Let's standardize the dataset:
+
+Boston_scaled &lt;- scale(Boston)
+summary(Boston_scaled)
+
+#After standardizing the data, the mean for all variables is now 0.00, as expected.
+
+#Let's convert the scaled data from a matrix format to a data frame format:
+
+Boston_scaled &lt;- as.data.frame(Boston_scaled)
+
+#Let's create a categorical variable &quot;crime&quot; of the crime rate variable (crim):
+
+summary(Boston_scaled$crim)
+bins &lt;- quantile(Boston_scaled$crim)
+crime &lt;- cut(Boston_scaled$crim, breaks = bins, include.lowest = TRUE, labels = c(&quot;low&quot;, &quot;med_low&quot;, &quot;med_high&quot;, &quot;high&quot;))
+
+#Let's remove the crim-variable from the original data:
+
+Boston_scaled &lt;- dplyr::select(Boston_scaled, -crim)
+dim(Boston_scaled)
+
+#We now have 13 insted of 14 variables, good! Let's now add the new crime-variable to the scaled dataset:
+
+Boston_scaled &lt;- data.frame(Boston_scaled, crime)
+dim(Boston_scaled)
+str(Boston_scaled)
+
+#...and we're back to 14 variables, with a categorical crime-variable, as can clearly be seen from analysing the structure of Boston_scaled.
+
+#Let's divide the dataset to train (80%) and test (20%) sets:
+
+nrow(Boston_scaled)
+n &lt;- nrow(Boston_scaled)
+ind &lt;- sample(n, size = n*0.8)
+train &lt;- Boston_scaled[ind, ]
+test &lt;- Boston_scaled[-ind, ]
+
+# 5) Linear discriminant analysis:
+
+lda.fit &lt;- lda(crime ~ ., data = train)
+lda.fit
+
+#Drawing LDA biplot:
+
+lda.arrows &lt;- function(x, myscale = 1, arrow_heads = 0.1, color = &quot;orange&quot;, tex = 0.75, choices = c(1,2)){
+  heads &lt;- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+classes &lt;- as.numeric(train$crime)
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows(lda.fit, myscale = 1)
+
+# 6) Predicting classes using the LDA model on the test data:
+
+#Let's first save the crime-categories from the test set as &quot;correct_classes&quot;, so that we can compare the predicted results with them later on:
+
+correct_classes &lt;- test$crime
+
+#Removing the crime-variable from the test dataset:
+
+test &lt;- dplyr::select(test, -crime)
+
+#Predicting the classes and crosstabulating the results:
+
+lda.pred &lt;- predict(lda.fit, newdata = test)
+table(correct = correct_classes, predicted = lda.pred$class)
+
+#The table demonstrates that the LDA model predicted too low a class for 12 cases and too high a class for 23 cases. Most cases whose classes were wrongly predicted were in the &quot;med_low&quot; and &quot;med_high&quot; categories, but the predictive performance was quite good in the &quot;low&quot; and &quot;high&quot; categories (12/14 and 21/21 accurately predicted, respectively).
+
+# 7) Clustering:
+
+#Let's first reload the Boston dataset:
+
+library(MASS)
+data(Boston)
+Boston2 &lt;- Boston
+
+#Standardizing the dataset:
+
+Boston2_scaled &lt;- scale(Boston2)
+
+#Calculating (Euclidean) distances between observations:
+
+dist_eu &lt;- dist(Boston2_scaled)
+summary(dist_eu)
+
+#Running the kmeans algorithm, starting with 4 centers:
+
+km &lt;- kmeans(Boston2_scaled, centers = 4)
+pairs(Boston2_scaled, col = km$cluster)
+
+#This is all very well. However, let's now investigate what the optimal number of clusters is. Let's set the number of clusters a maximum of 10:
+
+k_max &lt;- 10
+
+#Let's calculate the total within cluster sum of squares (twcss):
+
+twcss &lt;- sapply(1:k_max, function(k){kmeans(Boston, k)$tot.withinss})
+
+#Let's visualize twcss:
+
+install.packages(&quot;ggplot2&quot;)
+library(ggplot2)
+qplot(x = 1:k_max, y = twcss, geom = &quot;line&quot;)
+
+#As we've learned, we know that the number of clusters is optimal when the twcss is at its smallest. Our plot clearly demonstrates that twcss drastically reduces when k=2, meaning that 2 clusters will serve us quite fine!
+
+#Now we can re-run the kmeans algorithm:
+
+km &lt;- kmeans(Boston2_scaled, centers = 2)
+pairs(Boston2_scaled, col = km$cluster)
+
+#We end up with a rather complex-looking plot. Regrettably, I can't interpret this. Let's instead move on to the bonus-assignment:
+
+# 8) BONUS:
+
+#Standardizing data:
+
+library(MASS)
+data(Boston)
+Boston3 &lt;- Boston
+Boston3_scaled &lt;- scale(Boston3)
+Boston3_scaled &lt;- data.frame(Boston3_scaled)
+
+#Running kmeans using 4 clusters:
+
+km3 &lt;- kmeans(Boston3_scaled, centers = 4)
+
+#Performing LDA using clusters as target classes:
+
+lda.fit3 &lt;- lda(km3$cluster ~., data = Boston3_scaled)
+
+#Visualisation:
+
+lda.arrows &lt;- function(x, myscale = 1, arrow_heads = 0.1, color = &quot;orange&quot;, tex = 0.75, choices = c(1,2)){
+  heads &lt;- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+plot(lda.fit3, dimen = 2, col = classes, pch = classes)
+lda.arrows(lda.fit3, myscale = 1)
+
+#Once again, we end up with quite a graph! Judging by arrow size, the variables &quot;rad&quot; and &quot;indus&quot; seem to be most influencial linear separators for the clusters.
+
+#I'm afraid the super-bonus-assignment is out of my reach.
+
+#THE END.
+</code></pre>
+<hr />
 </div>
 
 
