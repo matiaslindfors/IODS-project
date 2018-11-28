@@ -475,6 +475,219 @@ lda.arrows(lda.fit3, myscale = 1)
 #THE END.
 </code></pre>
 <hr />
+<pre><code>
+#Here is the analysis-assignment for week 5:
+
+#Let's first load the data into R. I will use the data found online, just in case my data wrangling was not successful:
+
+human_url &lt;- read.table(&quot;http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human2.txt&quot;, header = TRUE, sep = &quot;,&quot;)
+
+# 1): Overview of data:
+
+summary(human_url)
+
+#As we can see, the GNI ranges from 581 to 123124. Regarding secondary education, women have nearly as often completed such education as men have (median of FM-ratio 0.94), yet women are less often working (median of FM-ratio 0.75). More info can be seen here:
+
+   Edu2.FM          Labo.FM          Edu.Exp         Life.Exp          GNI            Mat.Mor         Ado.Birth     
+ Min.   :0.1717   Min.   :0.1857   Min.   : 5.40   Min.   :49.00   Min.   :   581   Min.   :   1.0   Min.   :  0.60  
+ 1st Qu.:0.7264   1st Qu.:0.5984   1st Qu.:11.25   1st Qu.:66.30   1st Qu.:  4198   1st Qu.:  11.5   1st Qu.: 12.65  
+ Median :0.9375   Median :0.7535   Median :13.50   Median :74.20   Median : 12040   Median :  49.0   Median : 33.60  
+ Mean   :0.8529   Mean   :0.7074   Mean   :13.18   Mean   :71.65   Mean   : 17628   Mean   : 149.1   Mean   : 47.16  
+ 3rd Qu.:0.9968   3rd Qu.:0.8535   3rd Qu.:15.20   3rd Qu.:77.25   3rd Qu.: 24512   3rd Qu.: 190.0   3rd Qu.: 71.95  
+ Max.   :1.4967   Max.   :1.0380   Max.   :20.20   Max.   :83.50   Max.   :123124   Max.   :1100.0   Max.   :204.80  
+    Parli.F     
+ Min.   : 0.00  
+ 1st Qu.:12.40  
+ Median :19.30  
+ Mean   :20.91  
+ 3rd Qu.:27.95  
+ Max.   :57.50
+
+#Let's have a look at correlations between the variables:
+
+install.packages(&quot;corrplot&quot;)
+library(corrplot)
+cor_matrix &lt;- cor(human_url)
+corrplot(cor_matrix, method=&quot;circle&quot;, type=&quot;upper&quot;)
+
+#(Regrettably, I don't know how to incorporate my figures to the HTML version, so you might not be able to see them! My apologies)
+
+#As we can see, there is a strong negative correlation between maternal mortality and life expectancy, which is hardly surprising. Moreover, there are relatively strong positive correlations between maternal mortality and adolescent birth rate, and between life expectancy and expected years of education.
+
+# 2) Principal component analysis:
+
+pca_human_url &lt;- prcomp(human_url)
+pca_human_url
+
+Standard deviations (1, .., p=8):
+[1] 1.854416e+04 1.855219e+02 2.518701e+01 1.145441e+01 3.766241e+00 1.565912e+00
+[7] 1.912052e-01 1.591112e-01
+
+Rotation (n x k) = (8 x 8):
+                    PC1           PC2           PC3           PC4           PC5
+Edu2.FM   -5.607472e-06  0.0006713951 -3.412027e-05 -2.736326e-04 -0.0022935252
+Labo.FM    2.331945e-07 -0.0002819357  5.302884e-04 -4.692578e-03  0.0022190154
+Edu.Exp   -9.562910e-05  0.0075529759  1.427664e-02 -3.313505e-02  0.1431180282
+Life.Exp  -2.815823e-04  0.0283150248  1.294971e-02 -6.752684e-02  0.9865644425
+GNI       -9.999832e-01 -0.0057723054 -5.156742e-04  4.932889e-05 -0.0001135863
+Mat.Mor    5.655734e-03 -0.9916320120  1.260302e-01 -6.100534e-03  0.0266373214
+Ado.Birth  1.233961e-03 -0.1255502723 -9.918113e-01  5.301595e-03  0.0188618600
+Parli.F   -5.526460e-05  0.0032317269 -7.398331e-03 -9.971232e-01 -0.0716401914
+                    PC6           PC7           PC8
+Edu2.FM    2.180183e-02  6.998623e-01  7.139410e-01
+Labo.FM    3.264423e-02  7.132267e-01 -7.001533e-01
+Edu.Exp    9.882477e-01 -3.826887e-02  7.776451e-03
+Life.Exp  -1.453515e-01  5.380452e-03  2.281723e-03
+GNI       -2.711698e-05 -8.075191e-07 -1.176762e-06
+Mat.Mor    1.695203e-03  1.355518e-04  8.371934e-04
+Ado.Birth  1.273198e-02 -8.641234e-05 -1.707885e-04
+Parli.F   -2.309896e-02 -2.642548e-03  2.680113e-03
+
+biplot(pca_human_url, choices = 1:2, cex = c(0.8, 1), col = c(&quot;grey40&quot;, &quot;deeppink2&quot;))
+
+# 3) Repeating PCA with standardized data:
+
+human_url_s &lt;- scale(human_url)
+pca_human_url_s &lt;- prcomp(human_url_s)
+pca_human_url_s
+
+Standard deviations (1, .., p=8):
+[1] 2.0708380 1.1397204 0.8750485 0.7788630 0.6619563 0.5363061 0.4589994 0.3222406
+
+Rotation (n x k) = (8 x 8):
+                  PC1         PC2         PC3         PC4        PC5         PC6
+Edu2.FM   -0.35664370  0.03796058 -0.24223089  0.62678110 -0.5983585  0.17713316
+Labo.FM    0.05457785  0.72432726 -0.58428770  0.06199424  0.2625067 -0.03500707
+Edu.Exp   -0.42766720  0.13940571 -0.07340270 -0.07020294  0.1659678 -0.38606919
+Life.Exp  -0.44372240 -0.02530473  0.10991305 -0.05834819  0.1628935 -0.42242796
+GNI       -0.35048295  0.05060876 -0.20168779 -0.72727675 -0.4950306  0.11120305
+Mat.Mor    0.43697098  0.14508727 -0.12522539 -0.25170614 -0.1800657  0.17370039
+Ado.Birth  0.41126010  0.07708468  0.01968243  0.04986763 -0.4672068 -0.76056557
+Parli.F   -0.08438558  0.65136866  0.72506309  0.01396293 -0.1523699  0.13749772
+                  PC7         PC8
+Edu2.FM    0.05773644  0.16459453
+Labo.FM   -0.22729927 -0.07304568
+Edu.Exp    0.77962966 -0.05415984
+Life.Exp  -0.43406432  0.62737008
+GNI       -0.13711838 -0.16961173
+Mat.Mor    0.35380306  0.72193946
+Ado.Birth -0.06897064 -0.14335186
+Parli.F    0.00568387 -0.02306476
+
+biplot(pca_human_url_s, choices = 1:2, cex = c(0.8, 1), col = c(&quot;grey40&quot;, &quot;deeppink2&quot;))
+
+#As we can see, before standardizing the data, GNI has a very large effect, and the effect of other variables can't thus be seen. The coefficients suggest that the effect of GNI is more than 100-fold compared to the other variables under investigation.
+
+#In the standardized data, it appears that the PC1 is affected by factors such as life expectancy, educational aspects, and, on the other hand, maternal mortality and adolecsent birth rate. Moreover, PC2 is affected by women's participation rate in both the work force and parliament.
+
+# 4) It appers it is possible to discriminate countries into two groups based on their maternal mortality rate, adolecsent birth rate, average life expectancy, expected years of education and proportion of educated women. This dichotomization most likely represents the fact that countries which have high maternal mortality rates and adolecsent birth rates also have low life expectancy and a low percentage of educated women. Moreover, following such a dichotomization it is further possible to divide countries into two categories based on women's participation rates in the work force and parliament; in most cases, the two presumably go hand-in-hand.
+
+# 5) Multiple Correspondence Analysis:
+
+#Loading the tea dataset into R:
+
+install.packages(&quot;FactoMineR&quot;)
+library(FactoMineR)
+data(tea)
+
+dim(tea)
+str(tea)
+
+#Altogether 300 observations across 36 variables, as we can see. Quite a few of the variables seem to be categorical.
+
+install.packages(&quot;dplyr&quot;)
+install.packages(&quot;tidyr&quot;)
+install.packages(&quot;ggplot2&quot;)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+#Let's visualize some of the multinomial variables in the data:
+
+keep_columns &lt;- c(&quot;Tea&quot;, &quot;How&quot;, &quot;how&quot;, &quot;sugar&quot;, &quot;where&quot;, &quot;lunch&quot;)
+tea_time &lt;- select(tea, one_of(keep_columns))
+
+gather(tea_time) %&gt;% ggplot(aes(value)) + facet_wrap(&quot;key&quot;, scales = &quot;free&quot;) + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+#Now, let's get to doing the MCA!
+
+mca &lt;- MCA(tea_time, graph = FALSE)
+summary(mca)
+
+Eigenvalues
+                       Dim.1   Dim.2   Dim.3   Dim.4   Dim.5   Dim.6   Dim.7   Dim.8
+Variance               0.279   0.261   0.219   0.189   0.177   0.156   0.144   0.141
+% of var.             15.238  14.232  11.964  10.333   9.667   8.519   7.841   7.705
+Cumulative % of var.  15.238  29.471  41.435  51.768  61.434  69.953  77.794  85.500
+                       Dim.9  Dim.10  Dim.11
+Variance               0.117   0.087   0.062
+% of var.              6.392   4.724   3.385
+Cumulative % of var.  91.891  96.615 100.000
+
+Individuals (the 10 first)
+                      Dim.1    ctr   cos2    Dim.2    ctr   cos2    Dim.3    ctr
+1                  | -0.298  0.106  0.086 | -0.328  0.137  0.105 | -0.327  0.163
+2                  | -0.237  0.067  0.036 | -0.136  0.024  0.012 | -0.695  0.735
+3                  | -0.369  0.162  0.231 | -0.300  0.115  0.153 | -0.202  0.062
+4                  | -0.530  0.335  0.460 | -0.318  0.129  0.166 |  0.211  0.068
+5                  | -0.369  0.162  0.231 | -0.300  0.115  0.153 | -0.202  0.062
+6                  | -0.369  0.162  0.231 | -0.300  0.115  0.153 | -0.202  0.062
+7                  | -0.369  0.162  0.231 | -0.300  0.115  0.153 | -0.202  0.062
+8                  | -0.237  0.067  0.036 | -0.136  0.024  0.012 | -0.695  0.735
+9                  |  0.143  0.024  0.012 |  0.871  0.969  0.435 | -0.067  0.007
+10                 |  0.476  0.271  0.140 |  0.687  0.604  0.291 | -0.650  0.643
+                     cos2  
+1                   0.104 |
+2                   0.314 |
+3                   0.069 |
+4                   0.073 |
+5                   0.069 |
+6                   0.069 |
+7                   0.069 |
+8                   0.314 |
+9                   0.003 |
+10                  0.261 |
+
+Categories (the 10 first)
+                       Dim.1     ctr    cos2  v.test     Dim.2     ctr    cos2
+black              |   0.473   3.288   0.073   4.677 |   0.094   0.139   0.003
+Earl Grey          |  -0.264   2.680   0.126  -6.137 |   0.123   0.626   0.027
+green              |   0.486   1.547   0.029   2.952 |  -0.933   6.111   0.107
+alone              |  -0.018   0.012   0.001  -0.418 |  -0.262   2.841   0.127
+lemon              |   0.669   2.938   0.055   4.068 |   0.531   1.979   0.035
+milk               |  -0.337   1.420   0.030  -3.002 |   0.272   0.990   0.020
+other              |   0.288   0.148   0.003   0.876 |   1.820   6.347   0.102
+tea bag            |  -0.608  12.499   0.483 -12.023 |  -0.351   4.459   0.161
+tea bag+unpackaged |   0.350   2.289   0.056   4.088 |   1.024  20.968   0.478
+unpackaged         |   1.958  27.432   0.523  12.499 |  -1.015   7.898   0.141
+                    v.test     Dim.3     ctr    cos2  v.test  
+black                0.929 |  -1.081  21.888   0.382 -10.692 |
+Earl Grey            2.867 |   0.433   9.160   0.338  10.053 |
+green               -5.669 |  -0.108   0.098   0.001  -0.659 |
+alone               -6.164 |  -0.113   0.627   0.024  -2.655 |
+lemon                3.226 |   1.329  14.771   0.218   8.081 |
+milk                 2.422 |   0.013   0.003   0.000   0.116 |
+other                5.534 |  -2.524  14.526   0.197  -7.676 |
+tea bag             -6.941 |  -0.065   0.183   0.006  -1.287 |
+tea bag+unpackaged  11.956 |   0.019   0.009   0.000   0.226 |
+unpackaged          -6.482 |   0.257   0.602   0.009   1.640 |
+
+Categorical variables (eta2)
+                     Dim.1 Dim.2 Dim.3  
+Tea                | 0.126 0.108 0.410 |
+How                | 0.076 0.190 0.394 |
+how                | 0.708 0.522 0.010 |
+sugar              | 0.065 0.001 0.336 |
+where              | 0.702 0.681 0.055 |
+lunch              | 0.000 0.064 0.111 |
+
+plot(mca, invisible=c(&quot;ind&quot;), habillage = &quot;quali&quot;)
+
+#I find the results somewhat difficult to interpret. I'll try to get back to this if time permits!
+
+#THE END
+</code></pre>
+<hr />
 </div>
 
 
